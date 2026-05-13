@@ -213,7 +213,7 @@ public sealed class MainWindow : Window, IDisposable
             ImGui.TableSetupColumn("Tickets", ImGuiTableColumnFlags.WidthFixed, 80);
             ImGui.TableSetupColumn("Range", ImGuiTableColumnFlags.WidthFixed, 120);
             ImGui.TableSetupColumn("Cost", ImGuiTableColumnFlags.WidthFixed, 130);
-            ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, 90);
+            ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, 170);
             ImGui.TableHeadersRow();
 
             for (var i = 0; i < config.SalesLedger.Count; i++)
@@ -238,6 +238,11 @@ public sealed class MainWindow : Window, IDisposable
                 ImGui.TextUnformatted($"{sale.Gil:N0}");
 
                 ImGui.TableSetColumnIndex(5);
+                if (this.DrawSmallActionButton($"Tell Target##TellSale{i}", ButtonTone.Info))
+                    this.plugin.TellTicketSaleToCurrentTarget(sale);
+
+                ImGui.SameLine();
+
                 if (this.DrawSmallActionButton($"Delete##DeleteSale{i}", ButtonTone.Danger))
                 {
                     this.saleIndexPendingDelete = i;

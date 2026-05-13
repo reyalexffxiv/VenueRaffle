@@ -292,6 +292,18 @@ public sealed class Plugin : IDalamudPlugin
         this.TellTicketSale(sale, playerName.Trim());
     }
 
+    /// <summary>
+    /// Resends the selected raffle entry ticket range to the current in-game target.
+    /// Used by the Statistics tab when staff need to resend an older purchase later.
+    /// </summary>
+    public void TellTicketSaleToCurrentTarget(Models.RaffleSaleRecord sale)
+    {
+        if (!this.EnsureLicensed())
+            return;
+
+        this.TellTicketSale(sale);
+    }
+
     private void TellTicketSale(Models.RaffleSaleRecord sale, string? namedTicketOwner = null)
     {
         var template = string.IsNullOrWhiteSpace(namedTicketOwner)
