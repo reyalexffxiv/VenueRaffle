@@ -3,7 +3,7 @@
     "Author": "ReyAlex",
     "Name": "Venue Raffle",
     "InternalName": "VenueRaffle",
-    "AssemblyVersion": "0.1.0.1",
+    "AssemblyVersion": "0.1.0.2",
     "Description": "A lightweight raffle ticket manager for FFXIV venues.",
     "Punchline": "Run venue raffles with ticket tracking, macros, winner draws, and local licensing.",
     "RepoUrl": "https://github.com/reyalexffxiv/VenueRaffle",

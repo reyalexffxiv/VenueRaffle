@@ -183,7 +183,6 @@ public sealed class MainWindow : Window, IDisposable
 
         this.DrawUndoLastSaleConfirmationPopup(session);
         this.DrawClearStatisticsConfirmationPopup(session);
-        this.DrawDeleteSaleConfirmationPopup(session);
 
         if (!string.IsNullOrWhiteSpace(this.exportStatus))
         {
@@ -252,6 +251,10 @@ public sealed class MainWindow : Window, IDisposable
 
             ImGui.EndTable();
         }
+
+        // Draw this popup after the table because row buttons open it from inside the table.
+        // If BeginPopupModal runs before the row button calls OpenPopup, the first click can appear to do nothing.
+        this.DrawDeleteSaleConfirmationPopup(session);
     }
 
     private void DrawFindTicketRow(Services.RaffleSession session)
@@ -380,15 +383,32 @@ public sealed class MainWindow : Window, IDisposable
         if (!ImGui.BeginPopupModal(DeleteSalePopupName, ref popupOpen, ImGuiWindowFlags.AlwaysAutoResize))
             return;
 
-        ImGui.TextWrapped("Delete this ticket sale and rebuild later ticket numbers?");
+        if (this.saleIndexPendingDelete < 0 || this.saleIndexPendingDelete >= this.plugin.Configuration.SalesLedger.Count)
+        {
+            ImGui.TextWrapped("This raffle entry no longer exists.");
+            ImGui.Spacing();
+
+            if (ImGui.Button("OK", new System.Numerics.Vector2(100, 0)))
+            {
+                this.saleIndexPendingDelete = -1;
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+            return;
+        }
+
+        var sale = this.plugin.Configuration.SalesLedger[this.saleIndexPendingDelete];
+        ImGui.TextWrapped($"Delete {sale.PlayerName}'s raffle entry, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil? Later ticket ranges will be rebuilt.");
 
         ImGui.Spacing();
 
-        if (ImGui.Button("Delete", new System.Numerics.Vector2(100, 0)))
+        if (this.DrawActionButton("Yes, Delete Entry", new System.Numerics.Vector2(150, 0), ButtonTone.Danger))
         {
             session.RemoveSaleAt(this.saleIndexPendingDelete);
             this.saleIndexPendingDelete = -1;
             this.findResult = string.Empty;
+            this.exportStatus = string.Empty;
             ImGui.CloseCurrentPopup();
         }
 
