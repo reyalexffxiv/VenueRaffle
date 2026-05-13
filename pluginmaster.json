@@ -11,7 +11,7 @@
     "DalamudApiLevel": 15,
     "IsHide": false,
     "IsTestingExclusive": false,
-    "DownloadLinkInstall": "https://github.com/reyalexffxiv/VenueRaffle/releases/download/v0.1.0.0/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/reyalexffxiv/VenueRaffle/releases/download/v0.1.0.0/latest.zip"
+    "DownloadLinkInstall": "https://raw.githubusercontent.com/reyalexffxiv/VenueRaffle/master/dist/VenueRaffle-latest.zip",
+    "DownloadLinkUpdate": "https://raw.githubusercontent.com/reyalexffxiv/VenueRaffle/master/dist/VenueRaffle-latest.zip"
   }
 ]
