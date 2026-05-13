@@ -1,5 +1,9 @@
 VenueRaffle Patch Notes
 
+0.1.0.6 - Raffle command alias
+- Added /raffle as an alias while keeping /venueraffle.
+- Updated README command notes.
+
 0.1.0.5 - Plugin URL and README cleanup
 - Added the GitHub repository URL to the bundled plugin manifest so Dalamud can expose the plugin URL consistently.
 - Removed developer build instructions from the public README.

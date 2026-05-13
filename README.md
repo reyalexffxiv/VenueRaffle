@@ -2,10 +2,11 @@
 
 Venue Raffle is a Dalamud plugin for running simple FFXIV venue raffle ticket sales.
 
-## Command
+## Commands
 
 ```text
 /venueraffle
+/raffle
 ```
 
 ## Core workflow

@@ -30,7 +30,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IReliableFileStorage ReliableFileStorage { get; private set; } = null!;
 
-    private const string CommandName = "/venueraffle";
+    private static readonly string[] CommandNames = ["/venueraffle", "/raffle"];
 
     private static readonly Regex OwnRandomRollRegex = new(
         @"(?:Random!\s*)?You\s+roll\s+an?\D*(?<roll>\d+)",
@@ -78,10 +78,13 @@ public sealed class Plugin : IDalamudPlugin
         this.WindowSystem.AddWindow(this.ConfigWindow);
         this.WindowSystem.AddWindow(this.MainWindow);
 
-        CommandManager.AddHandler(CommandName, new CommandInfo(this.OnCommand)
+        foreach (var commandName in CommandNames)
         {
-            HelpMessage = "Open the Venue Raffle ticket tracker."
-        });
+            CommandManager.AddHandler(commandName, new CommandInfo(this.OnCommand)
+            {
+                HelpMessage = "Open the Venue Raffle ticket tracker."
+            });
+        }
 
         Framework.Update += this.OnFrameworkUpdate;
 
@@ -104,7 +107,10 @@ public sealed class Plugin : IDalamudPlugin
 
         Framework.Update -= this.OnFrameworkUpdate;
 
-        CommandManager.RemoveHandler(CommandName);
+        foreach (var commandName in CommandNames)
+        {
+            CommandManager.RemoveHandler(commandName);
+        }
 
         this.WindowSystem.RemoveAllWindows();
 
