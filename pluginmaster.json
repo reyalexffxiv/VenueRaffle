@@ -1,0 +1,17 @@
+[
+  {
+    "Author": "ReyAlex",
+    "Name": "Venue Raffle",
+    "InternalName": "VenueRaffle",
+    "AssemblyVersion": "0.1.0.0",
+    "Description": "A lightweight raffle ticket manager for FFXIV venues.",
+    "Punchline": "Run venue raffles with ticket tracking, macros, winner draws, and local licensing.",
+    "RepoUrl": "https://github.com/reyalexffxiv/VenueRaffle",
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 15,
+    "IsHide": false,
+    "IsTestingExclusive": false,
+    "DownloadLinkInstall": "https://github.com/reyalexffxiv/VenueRaffle/releases/download/v0.1.0.0/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/reyalexffxiv/VenueRaffle/releases/download/v0.1.0.0/latest.zip"
+  }
+]
