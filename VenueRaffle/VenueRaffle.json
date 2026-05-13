@@ -1,0 +1,14 @@
+{
+    "Author": "ReyAlex",
+    "Name": "Venue Raffle",
+    "Punchline": "Simple raffle ticket tracker for FFXIV venues and events.",
+    "Description": "Tracks raffle ticket purchases, assigns ticket number ranges from the current target, calculates ticket sales and prize pot, and finds the winner from a drawn ticket number.",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "raffle",
+        "tickets",
+        "venue",
+        "events"
+    ],
+    "DalamudApiLevel": 15
+}

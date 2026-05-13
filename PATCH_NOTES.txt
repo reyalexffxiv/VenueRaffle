@@ -1,0 +1,7 @@
+# VenueRaffle Patch Notes
+
+Centralized changelog for VenueRaffle. Add future changes here instead of creating extra `PATCH_NOTES_*.txt` files.
+
+## v0.1.0.0 - First Beta Release
+
+- First beta release.

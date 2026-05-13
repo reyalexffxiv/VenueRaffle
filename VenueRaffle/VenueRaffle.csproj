@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+    <PropertyGroup>
+        <Version>0.1.0.0</Version>
+        <AssemblyName>VenueRaffle</AssemblyName>
+        <RootNamespace>VenueRaffle</RootNamespace>
+        <PackageProjectUrl>https://github.com/ReyAlex/VenueRaffle</PackageProjectUrl>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+        <IsPackable>false</IsPackable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="VenueRaffle.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+</Project>
