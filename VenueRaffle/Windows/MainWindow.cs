@@ -201,7 +201,7 @@ public sealed class MainWindow : Window, IDisposable
 
         if (ImGui.BeginTable(
                 "TicketLedgerTable",
-                6,
+                7,
                 ImGuiTableFlags.Borders |
                 ImGuiTableFlags.RowBg |
                 ImGuiTableFlags.Resizable |
@@ -209,11 +209,12 @@ public sealed class MainWindow : Window, IDisposable
                 new System.Numerics.Vector2(0, ledgerTableHeight)))
         {
             ImGui.TableSetupColumn("#", ImGuiTableColumnFlags.WidthFixed, 40);
-            ImGui.TableSetupColumn("Player");
+            ImGui.TableSetupColumn("Player", ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableSetupColumn("Tickets", ImGuiTableColumnFlags.WidthFixed, 80);
             ImGui.TableSetupColumn("Range", ImGuiTableColumnFlags.WidthFixed, 120);
             ImGui.TableSetupColumn("Cost", ImGuiTableColumnFlags.WidthFixed, 130);
-            ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed, 170);
+            ImGui.TableSetupColumn("Tell", ImGuiTableColumnFlags.WidthFixed, 95);
+            ImGui.TableSetupColumn("Delete", ImGuiTableColumnFlags.WidthFixed, 70);
             ImGui.TableHeadersRow();
 
             for (var i = 0; i < config.SalesLedger.Count; i++)
@@ -238,12 +239,11 @@ public sealed class MainWindow : Window, IDisposable
                 ImGui.TextUnformatted($"{sale.Gil:N0}");
 
                 ImGui.TableSetColumnIndex(5);
-                if (this.DrawSmallActionButton($"Tell Target##TellSale{i}", ButtonTone.Info))
+                if (this.DrawActionButton($"Tell Target##TellSale{i}", new System.Numerics.Vector2(86, 0), ButtonTone.Info))
                     this.plugin.TellTicketSaleToCurrentTarget(sale);
 
-                ImGui.SameLine();
-
-                if (this.DrawSmallActionButton($"Delete##DeleteSale{i}", ButtonTone.Danger))
+                ImGui.TableSetColumnIndex(6);
+                if (this.DrawActionButton($"Delete##DeleteSale{i}", new System.Numerics.Vector2(58, 0), ButtonTone.Danger))
                 {
                     this.saleIndexPendingDelete = i;
                     ImGui.OpenPopup(DeleteSalePopupName);
