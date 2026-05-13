@@ -1,8 +1,7 @@
 VenueRaffle Patch Notes
 
-0.1.0.2
-- Fixed row Delete buttons in the Statistics tab by opening the confirmation popup outside the table row ID stack.
-- Delete confirmation now shows the selected entry details before removing it.
+0.1.0.3
+- Replaced row Delete popup with an inline delete confirmation for reliable entry removal.
 
 0.1.0.0
 - First Beta Release.

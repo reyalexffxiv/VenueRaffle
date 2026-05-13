@@ -29,7 +29,6 @@ public sealed class MainWindow : Window, IDisposable
     private bool hasPopupCenter;
 
     private const string ClearStatisticsPopupName = "Clear Raffle Entries?";
-    private const string DeleteSalePopupName = "Delete Ticket Sale?";
     private const string UndoLastSalePopupName = "Undo Last Sale?";
 
     public MainWindow(Plugin plugin)
@@ -197,7 +196,7 @@ public sealed class MainWindow : Window, IDisposable
         // Let the ledger fill the remaining vertical space in the Statistics tab.
         // This makes the table grow/shrink naturally when the plugin window is resized.
         var ledgerTableHeight = Math.Max(180.0f, ImGui.GetContentRegionAvail().Y);
-        var deletePopupRequested = false;
+        this.DrawPendingDeleteEntryConfirmation(session);
 
         if (ImGui.BeginTable(
                 "TicketLedgerTable",
@@ -246,20 +245,47 @@ public sealed class MainWindow : Window, IDisposable
                 if (this.DrawActionButton($"Delete##DeleteSale{i}", new System.Numerics.Vector2(58, 0), ButtonTone.Danger))
                 {
                     this.saleIndexPendingDelete = i;
-                    deletePopupRequested = true;
                 }
             }
 
             ImGui.EndTable();
         }
 
-        // Open the modal outside the table ID stack.
-        // ImGui popups are tied to the current ID stack, so opening it from inside a row
-        // and drawing it outside the table can make the button appear to do nothing.
-        if (deletePopupRequested)
-            ImGui.OpenPopup(DeleteSalePopupName);
+    }
 
-        this.DrawDeleteSaleConfirmationPopup(session);
+    private void DrawPendingDeleteEntryConfirmation(Services.RaffleSession session)
+    {
+        if (this.saleIndexPendingDelete < 0)
+            return;
+
+        if (this.saleIndexPendingDelete >= this.plugin.Configuration.SalesLedger.Count)
+        {
+            this.saleIndexPendingDelete = -1;
+            return;
+        }
+
+        var sale = this.plugin.Configuration.SalesLedger[this.saleIndexPendingDelete];
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.TextWrapped($"Delete selected entry: {sale.PlayerName}, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil?");
+
+        if (this.DrawActionButton("Yes, Delete Selected Entry", new System.Numerics.Vector2(200, 0), ButtonTone.Danger))
+        {
+            session.RemoveSaleAt(this.saleIndexPendingDelete);
+            this.saleIndexPendingDelete = -1;
+            this.findResult = string.Empty;
+            this.exportStatus = string.Empty;
+            return;
+        }
+
+        ImGui.SameLine();
+
+        if (ImGui.Button("Cancel Delete", new System.Numerics.Vector2(120, 0)))
+            this.saleIndexPendingDelete = -1;
+
+        ImGui.Separator();
+        ImGui.Spacing();
     }
 
     private void DrawFindTicketRow(Services.RaffleSession session)
@@ -375,55 +401,6 @@ public sealed class MainWindow : Window, IDisposable
 
         if (ImGui.Button("Cancel", new System.Numerics.Vector2(100, 0)))
             ImGui.CloseCurrentPopup();
-
-        ImGui.EndPopup();
-    }
-
-    private void DrawDeleteSaleConfirmationPopup(Services.RaffleSession session)
-    {
-        var popupOpen = true;
-
-        this.CenterNextPopupInMainWindow();
-
-        if (!ImGui.BeginPopupModal(DeleteSalePopupName, ref popupOpen, ImGuiWindowFlags.AlwaysAutoResize))
-            return;
-
-        if (this.saleIndexPendingDelete < 0 || this.saleIndexPendingDelete >= this.plugin.Configuration.SalesLedger.Count)
-        {
-            ImGui.TextWrapped("This raffle entry no longer exists.");
-            ImGui.Spacing();
-
-            if (ImGui.Button("OK", new System.Numerics.Vector2(100, 0)))
-            {
-                this.saleIndexPendingDelete = -1;
-                ImGui.CloseCurrentPopup();
-            }
-
-            ImGui.EndPopup();
-            return;
-        }
-
-        var sale = this.plugin.Configuration.SalesLedger[this.saleIndexPendingDelete];
-        ImGui.TextWrapped($"Delete {sale.PlayerName}, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil? Later ticket ranges will be rebuilt.");
-
-        ImGui.Spacing();
-
-        if (this.DrawActionButton("Yes, Delete Entry", new System.Numerics.Vector2(140, 0), ButtonTone.Danger))
-        {
-            session.RemoveSaleAt(this.saleIndexPendingDelete);
-            this.saleIndexPendingDelete = -1;
-            this.findResult = string.Empty;
-            this.exportStatus = string.Empty;
-            ImGui.CloseCurrentPopup();
-        }
-
-        ImGui.SameLine();
-
-        if (ImGui.Button("Cancel", new System.Numerics.Vector2(100, 0)))
-        {
-            this.saleIndexPendingDelete = -1;
-            ImGui.CloseCurrentPopup();
-        }
 
         ImGui.EndPopup();
     }
