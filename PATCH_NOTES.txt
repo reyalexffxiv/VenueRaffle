@@ -1,17 +1,8 @@
-# VenueRaffle Patch Notes
+VenueRaffle Patch Notes
 
-Centralized changelog for VenueRaffle. Add future changes here instead of creating extra `PATCH_NOTES_*.txt` files.
+0.1.0.2
+- Fixed row Delete buttons in the Statistics tab by opening the confirmation popup outside the table row ID stack.
+- Delete confirmation now shows the selected entry details before removing it.
 
-## v0.1.0.2 - Raffle Entry Delete Fix
-
-- Fixed row-level Delete in the Statistics tab so the confirmation popup opens reliably.
-- Improved the delete confirmation text to show the selected player, ticket range, and cost before rebuilding later ticket ranges.
-
-## v0.1.0.1 - Raffle Entry Action Layout
-
-- Split the Statistics tab row actions into separate Tell and Delete columns so both buttons remain readable.
-- Kept the row-level Tell Target action for resending ticket numbers to the currently targeted player.
-
-## v0.1.0.0 - First Beta Release
-
-- First beta release.
+0.1.0.0
+- First Beta Release.

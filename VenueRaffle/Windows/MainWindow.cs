@@ -197,6 +197,7 @@ public sealed class MainWindow : Window, IDisposable
         // Let the ledger fill the remaining vertical space in the Statistics tab.
         // This makes the table grow/shrink naturally when the plugin window is resized.
         var ledgerTableHeight = Math.Max(180.0f, ImGui.GetContentRegionAvail().Y);
+        var deletePopupRequested = false;
 
         if (ImGui.BeginTable(
                 "TicketLedgerTable",
@@ -245,15 +246,19 @@ public sealed class MainWindow : Window, IDisposable
                 if (this.DrawActionButton($"Delete##DeleteSale{i}", new System.Numerics.Vector2(58, 0), ButtonTone.Danger))
                 {
                     this.saleIndexPendingDelete = i;
-                    ImGui.OpenPopup(DeleteSalePopupName);
+                    deletePopupRequested = true;
                 }
             }
 
             ImGui.EndTable();
         }
 
-        // Draw this popup after the table because row buttons open it from inside the table.
-        // If BeginPopupModal runs before the row button calls OpenPopup, the first click can appear to do nothing.
+        // Open the modal outside the table ID stack.
+        // ImGui popups are tied to the current ID stack, so opening it from inside a row
+        // and drawing it outside the table can make the button appear to do nothing.
+        if (deletePopupRequested)
+            ImGui.OpenPopup(DeleteSalePopupName);
+
         this.DrawDeleteSaleConfirmationPopup(session);
     }
 
@@ -399,11 +404,11 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         var sale = this.plugin.Configuration.SalesLedger[this.saleIndexPendingDelete];
-        ImGui.TextWrapped($"Delete {sale.PlayerName}'s raffle entry, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil? Later ticket ranges will be rebuilt.");
+        ImGui.TextWrapped($"Delete {sale.PlayerName}, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil? Later ticket ranges will be rebuilt.");
 
         ImGui.Spacing();
 
-        if (this.DrawActionButton("Yes, Delete Entry", new System.Numerics.Vector2(150, 0), ButtonTone.Danger))
+        if (this.DrawActionButton("Yes, Delete Entry", new System.Numerics.Vector2(140, 0), ButtonTone.Danger))
         {
             session.RemoveSaleAt(this.saleIndexPendingDelete);
             this.saleIndexPendingDelete = -1;
