@@ -10,5 +10,6 @@
         "venue",
         "events"
     ],
-    "DalamudApiLevel": 15
+    "DalamudApiLevel": 15,
+    "RepoUrl": "https://github.com/reyalexffxiv/VenueRaffle"
 }

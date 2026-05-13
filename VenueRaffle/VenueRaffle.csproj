@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
     <PropertyGroup>
-        <Version>0.1.0.4</Version>
+        <Version>0.1.0.5</Version>
         <AssemblyName>VenueRaffle</AssemblyName>
         <RootNamespace>VenueRaffle</RootNamespace>
-        <PackageProjectUrl>https://github.com/ReyAlex/VenueRaffle</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/reyalexffxiv/VenueRaffle</PackageProjectUrl>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
         <IsPackable>false</IsPackable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

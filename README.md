@@ -33,17 +33,3 @@ Activation flow:
 3. User pastes the license text in Settings > License and clicks **Activate**.
 
 No online server is used, and no FFXIV character name, world, raffle data, chat messages, targets, or hardware fingerprint is sent anywhere.
-
-## Build
-
-Open `VenueRaffle.sln` in Visual Studio or Rider, or run:
-
-```powershell
-dotnet build .\VenueRaffle.sln
-```
-
-Debug output is normally under:
-
-```text
-VenueRaffle/bin/x64/Debug/
-```
