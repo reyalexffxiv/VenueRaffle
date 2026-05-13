@@ -30,6 +30,7 @@ public sealed class MainWindow : Window, IDisposable
 
     private const string ClearStatisticsPopupName = "Clear Raffle Entries?";
     private const string UndoLastSalePopupName = "Undo Last Sale?";
+    private const string DeleteEntryWindowName = "Delete Raffle Entry?###VenueRaffleDeleteEntryConfirm";
 
     public MainWindow(Plugin plugin)
         : base("Venue Raffle###VenueRaffleMain")
@@ -196,7 +197,6 @@ public sealed class MainWindow : Window, IDisposable
         // Let the ledger fill the remaining vertical space in the Statistics tab.
         // This makes the table grow/shrink naturally when the plugin window is resized.
         var ledgerTableHeight = Math.Max(180.0f, ImGui.GetContentRegionAvail().Y);
-        this.DrawPendingDeleteEntryConfirmation(session);
 
         if (ImGui.BeginTable(
                 "TicketLedgerTable",
@@ -251,9 +251,10 @@ public sealed class MainWindow : Window, IDisposable
             ImGui.EndTable();
         }
 
+        this.DrawFloatingDeleteEntryConfirmation(session);
     }
 
-    private void DrawPendingDeleteEntryConfirmation(Services.RaffleSession session)
+    private void DrawFloatingDeleteEntryConfirmation(Services.RaffleSession session)
     {
         if (this.saleIndexPendingDelete < 0)
             return;
@@ -265,27 +266,40 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         var sale = this.plugin.Configuration.SalesLedger[this.saleIndexPendingDelete];
+        var isOpen = true;
 
+        this.CenterNextPopupInMainWindow();
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(390, 0), ImGuiCond.Always);
+
+        if (!ImGui.Begin(DeleteEntryWindowName, ref isOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoCollapse))
+        {
+            ImGui.End();
+            return;
+        }
+
+        ImGui.TextWrapped($"Delete {sale.PlayerName}, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil?");
+        ImGui.TextDisabled("Later ticket ranges will be rebuilt automatically.");
         ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.TextWrapped($"Delete selected entry: {sale.PlayerName}, tickets {sale.TicketRange}, cost {sale.Gil:N0} gil?");
 
-        if (this.DrawActionButton("Yes, Delete Selected Entry", new System.Numerics.Vector2(200, 0), ButtonTone.Danger))
+        if (this.DrawActionButton("Yes, Delete Entry", new System.Numerics.Vector2(170, 0), ButtonTone.Danger))
         {
             session.RemoveSaleAt(this.saleIndexPendingDelete);
             this.saleIndexPendingDelete = -1;
             this.findResult = string.Empty;
             this.exportStatus = string.Empty;
+            ImGui.End();
             return;
         }
 
         ImGui.SameLine();
 
-        if (ImGui.Button("Cancel Delete", new System.Numerics.Vector2(120, 0)))
+        if (ImGui.Button("Cancel", new System.Numerics.Vector2(110, 0)))
             this.saleIndexPendingDelete = -1;
 
-        ImGui.Separator();
-        ImGui.Spacing();
+        ImGui.End();
+
+        if (!isOpen)
+            this.saleIndexPendingDelete = -1;
     }
 
     private void DrawFindTicketRow(Services.RaffleSession session)

@@ -1,5 +1,8 @@
 VenueRaffle Patch Notes
 
+0.1.0.4
+- Changed raffle entry delete confirmation to a centered floating confirmation box so the Statistics table no longer gains an extra scrollbar.
+
 0.1.0.3
 - Replaced row Delete popup with an inline delete confirmation for reliable entry removal.
 
