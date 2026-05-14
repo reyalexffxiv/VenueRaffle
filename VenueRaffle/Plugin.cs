@@ -17,11 +17,12 @@ namespace VenueRaffle;
 /// Dalamud plugin entry point.
 ///
 /// This class wires together UI windows, chat command handling, raffle business logic,
-/// local reliable storage, and offline license validation. Keep heavy logic in services
+/// local reliable storage, and chat command handling. Keep heavy logic in services
 /// so the plugin entry point remains easy to scan.
 /// </summary>
 public sealed class Plugin : IDalamudPlugin
 {
+    // Dalamud services are injected once at plugin startup and reused by the UI/services.
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
@@ -30,6 +31,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IReliableFileStorage ReliableFileStorage { get; private set; } = null!;
 
+    // Keep both commands registered so existing users can keep using /venueraffle while /raffle works as a short alias.
     private static readonly string[] CommandNames = ["/venueraffle", "/raffle"];
 
     private static readonly Regex OwnRandomRollRegex = new(
@@ -38,15 +40,18 @@ public sealed class Plugin : IDalamudPlugin
 
     private bool waitingForWinnerRandom;
 
+    /// <summary>Saved plugin configuration, including UI state and raffle settings.</summary>
     public Configuration Configuration { get; }
 
+    /// <summary>In-memory raffle totals and entry operations.</summary>
     public RaffleSession RaffleSession { get; }
 
+    /// <summary>Persistent storage wrapper used to reload entries after restarts.</summary>
     public RaffleStateStorage RaffleStateStorage { get; }
 
+    /// <summary>Queues safe, rate-limited FFXIV chat commands.</summary>
     public GameChatService GameChatService { get; }
 
-    public OfflineLicenseService LicenseService { get; }
 
     public readonly WindowSystem WindowSystem = new("VenueRaffle");
 
@@ -64,7 +69,6 @@ public sealed class Plugin : IDalamudPlugin
             Log.Information("Cleaned legacy manual <wait.N> lines from VenueRaffle macros. Macro wait boxes now handle spacing.");
         }
 
-        this.LicenseService = new OfflineLicenseService(this.Configuration, Log);
 
         this.RaffleStateStorage = new RaffleStateStorage(PluginInterface, ReliableFileStorage, Log);
         this.RaffleStateStorage.LoadInto(this.Configuration);
@@ -118,21 +122,14 @@ public sealed class Plugin : IDalamudPlugin
         this.MainWindow.Dispose();
     }
 
-    private bool EnsureLicensed()
-    {
-        if (this.LicenseService.IsLicensed)
-            return true;
 
-        ChatGui.PrintError("[VenueRaffle] License required. Open Settings > License and paste your install-bound license text.");
-        this.ConfigWindow.IsOpen = true;
-        return false;
-    }
-
+    /// <summary>Flushes at most one queued chat command per framework tick.</summary>
     private void OnFrameworkUpdate(IFramework framework)
     {
         this.GameChatService.FlushOnePendingCommand();
     }
 
+    /// <summary>Handles /venueraffle and /raffle subcommands without printing chat spam.</summary>
     private void OnCommand(string command, string args)
     {
         var trimmedArgs = args.Trim().ToLowerInvariant();
@@ -140,31 +137,22 @@ public sealed class Plugin : IDalamudPlugin
         switch (trimmedArgs)
         {
             case "reset":
-                if (!this.EnsureLicensed()) break;
                 this.ResetRaffle();
                 break;
 
-            case "status":
-                this.PrintStatus();
-                break;
-
             case "tell":
-                if (!this.EnsureLicensed()) break;
                 this.TellLastBuyerTickets();
                 break;
 
             case "announce":
-                if (!this.EnsureLicensed()) break;
                 this.ShoutRaffleAnnouncement();
                 break;
 
             case "draw":
-                if (!this.EnsureLicensed()) break;
                 this.QueueWinnerDraw();
                 break;
 
             case "target":
-                if (!this.EnsureLicensed()) break;
                 this.SetTargetFromCurrentGameTarget();
                 break;
 
@@ -193,25 +181,21 @@ public sealed class Plugin : IDalamudPlugin
         this.AnnounceWinner(winningTicket);
     }
 
+    /// <summary>Copies the current in-game target name into the main sale name field.</summary>
     public void SetTargetFromCurrentGameTarget()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         var targetName = GetCurrentGameTargetName();
 
         if (string.IsNullOrWhiteSpace(targetName))
         {
-            ChatGui.PrintError("[VenueRaffle] No valid target selected.");
             return;
         }
 
         this.Configuration.TargetPlayerName = targetName;
         this.Configuration.Save();
-
-        ChatGui.Print($"[VenueRaffle] Target player set to {targetName}.");
     }
 
+    /// <summary>Reads the current target name defensively because Dalamud target data can be null between frames.</summary>
     private static string GetCurrentGameTargetName()
     {
         try
@@ -225,73 +209,54 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
+    /// <summary>Adds tickets for the name currently typed in the main window.</summary>
     public void AddTicketsForConfiguredTarget(int tickets)
     {
-        if (!this.EnsureLicensed())
-            return;
-
         if (this.RaffleSession.TryAddTicketSale(this.Configuration.TargetPlayerName, tickets, out var sale, out var error))
         {
-            ChatGui.Print(
-                $"[VenueRaffle] {sale!.PlayerName}: tickets {sale.TicketRange}. " +
-                $"Cost: {sale.Gil:N0} gil. Pot: {this.RaffleSession.TotalPot:N0} gil.");
-
-            ChatGui.Print("[VenueRaffle] Use the /tell Target button when you want to message the current target their tickets.");
             return;
         }
-
-        ChatGui.PrintError($"[VenueRaffle] {error}");
         this.MainWindow.IsOpen = true;
     }
 
+    /// <summary>Sends the most recent sale's ticket range to the current in-game target.</summary>
     public void TellLastBuyerTickets()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         var sale = this.RaffleSession.LastSale;
 
         if (sale is null)
         {
-            ChatGui.PrintError("[VenueRaffle] There is no last sale to tell yet.");
             return;
         }
 
         this.TellTicketSale(sale);
     }
 
+    /// <summary>Sends the most recent sale using the saved buyer name in the tell template.</summary>
     public void TellLastBuyerTicketsWithName()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         var sale = this.RaffleSession.LastSale;
 
         if (sale is null)
         {
-            ChatGui.PrintError("[VenueRaffle] There is no last sale to tell yet.");
             return;
         }
 
         this.TellTicketSale(sale, sale.PlayerName);
     }
 
+    /// <summary>Sends the most recent sale with a manually supplied ticket owner name.</summary>
     public void TellLastBuyerTicketsForNamedPerson(string playerName)
     {
-        if (!this.EnsureLicensed())
-            return;
-
         var sale = this.RaffleSession.LastSale;
 
         if (sale is null)
         {
-            ChatGui.PrintError("[VenueRaffle] There is no last sale to tell yet.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(playerName))
         {
-            ChatGui.PrintError("[VenueRaffle] Enter a name before using the named tickets tell button.");
             return;
         }
 
@@ -304,8 +269,6 @@ public sealed class Plugin : IDalamudPlugin
     /// </summary>
     public void TellTicketSaleToCurrentTarget(Models.RaffleSaleRecord sale)
     {
-        if (!this.EnsureLicensed())
-            return;
 
         this.TellTicketSale(sale);
     }
@@ -319,36 +282,28 @@ public sealed class Plugin : IDalamudPlugin
         var message = this.RenderMacro(template, sale, namedTicketOwner);
 
         this.GameChatService.QueueTellCurrentTarget(message);
-        ChatGui.Print($"[VenueRaffle] Queued /tell <t>: {message}");
     }
 
+    /// <summary>Queues the configured raffle advertisement macro.</summary>
     public void ShoutRaffleAnnouncement()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         var macro = this.RenderMacro(this.Configuration.RaffleAdMacro);
 
         this.GameChatService.QueueMacroCommands(macro, TimeSpan.FromSeconds(this.Configuration.RaffleAdDelaySeconds));
-        ChatGui.Print($"[VenueRaffle] Queued raffle ad macro. Price: {FormatGilFull(this.Configuration.PricePerTicket)} per ticket. Prize: {FormatGilFull(this.RaffleSession.TotalPot)}.");
     }
 
+    /// <summary>Queues the countdown/random macro and starts listening for the resulting roll.</summary>
     public void QueueWinnerDraw()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         var totalTickets = this.RaffleSession.TotalTickets;
 
         if (totalTickets <= 0)
         {
-            ChatGui.PrintError("[VenueRaffle] Cannot draw a winner because there are no tickets yet.");
             return;
         }
 
         if (totalTickets > Services.RaffleSession.MaxTotalTickets)
         {
-            ChatGui.PrintError($"[VenueRaffle] Cannot draw winner: total tickets are {totalTickets:N0}, but FFXIV /random is capped at {Services.RaffleSession.MaxTotalTickets:N0}.");
             return;
         }
 
@@ -359,8 +314,6 @@ public sealed class Plugin : IDalamudPlugin
             macro += $"\n/random {totalTickets}";
 
         this.GameChatService.QueueMacroCommands(macro, TimeSpan.FromSeconds(this.Configuration.WinnerDrawDelaySeconds));
-
-        ChatGui.Print($"[VenueRaffle] Queued winner draw macro and /random {totalTickets:N0}.");
     }
 
     private void AnnounceWinner(int winningTicket)
@@ -370,15 +323,11 @@ public sealed class Plugin : IDalamudPlugin
         if (sale is null)
         {
             var notFound = $"Winning ticket {winningTicket:N0} was not found in the raffle entries.";
-            ChatGui.PrintError($"[VenueRaffle] {notFound}");
             this.GameChatService.QueueShout(notFound);
             return;
         }
 
-        var prizeText = FormatGilFull(this.RaffleSession.TotalPot);
         var macro = this.RenderMacro(this.Configuration.WinnerResultMacro, sale, winningTicket: winningTicket);
-
-        ChatGui.Print($"[VenueRaffle] Winner is {sale.PlayerName} with ticket number {winningTicket:N0}. Range: {sale.TicketRange}. Prize: {prizeText} Gil.");
         this.GameChatService.QueueMacroCommands(macro, TimeSpan.FromSeconds(this.Configuration.WinnerResultDelaySeconds));
     }
 
@@ -419,11 +368,13 @@ public sealed class Plugin : IDalamudPlugin
         return result;
     }
 
+    /// <summary>Formats gil values with full thousands separators, avoiding compact rounding surprises.</summary>
     private static string FormatGilFull(long gil)
     {
         return gil.ToString("N0", CultureInfo.InvariantCulture);
     }
 
+    /// <summary>Normalizes FFXIV chat glyph noise before parsing /random output.</summary>
     private static string CleanChatText(string text)
     {
         return text
@@ -437,41 +388,27 @@ public sealed class Plugin : IDalamudPlugin
             .Trim();
     }
 
+    /// <summary>Marks the current raffle as active.</summary>
     public void StartRaffle()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         this.RaffleSession.Start();
-        ChatGui.Print("[VenueRaffle] Raffle tracking started.");
     }
 
+    /// <summary>Marks the current raffle as inactive.</summary>
     public void StopRaffle()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         this.RaffleSession.Stop();
-        ChatGui.Print("[VenueRaffle] Raffle tracking stopped.");
     }
 
+    /// <summary>Clears all current raffle entries and resets totals.</summary>
     public void ResetRaffle()
     {
-        if (!this.EnsureLicensed())
-            return;
-
         this.RaffleSession.Reset();
-        ChatGui.Print("[VenueRaffle] Raffle entries cleared.");
     }
 
-    public void PrintStatus()
-    {
-        ChatGui.Print($"[VenueRaffle] Target: {this.Configuration.TargetPlayerName}");
-        ChatGui.Print($"[VenueRaffle] Entries: {this.RaffleSession.EntryCount:N0}, Tickets: {this.RaffleSession.TotalTickets:N0}");
-        ChatGui.Print($"[VenueRaffle] Pot: {this.RaffleSession.TotalPot:N0} gil, Ticket sales: {this.RaffleSession.GrossTicketSalesTotalGil:N0} gil, Venue/host share: {this.RaffleSession.VenueHostShareGil:N0} gil.");
-    }
-
+    /// <summary>Opens or closes the settings window.</summary>
     public void ToggleConfigUi() => this.ConfigWindow.Toggle();
 
+    /// <summary>Opens or closes the main raffle window.</summary>
     public void ToggleMainUi() => this.MainWindow.Toggle();
 }

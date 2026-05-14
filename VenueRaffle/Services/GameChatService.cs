@@ -17,6 +17,7 @@ namespace VenueRaffle.Services;
 /// 
 /// For commands like /s, /sh, /emote, etc., we use the game's
 /// RaptureShellModule command path through FFXIVClientStructs.
+/// Also spaces queued commands so FFXIV does not reject rapid macro lines.
 /// </summary>
 public sealed class GameChatService
 {
@@ -159,7 +160,7 @@ public sealed class GameChatService
     }
 
     /// <summary>
-    /// Queues any native chat command.
+    /// Adds one already-expanded FFXIV chat command to the queue.
     /// </summary>
     public void QueueCommand(string command)
     {

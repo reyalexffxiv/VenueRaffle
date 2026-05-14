@@ -8,7 +8,7 @@ using VenueRaffle.Models;
 namespace VenueRaffle;
 
 /// <summary>
-/// Persistent plugin configuration.
+/// User-editable and persisted plugin settings. Values are intentionally simple so Dalamud can serialize them safely.
 /// </summary>
 [Serializable]
 public sealed class Configuration : IPluginConfiguration
@@ -66,16 +66,7 @@ public sealed class Configuration : IPluginConfiguration
     /// </summary>
     public int MaxTicketsPerPurchase { get; set; } = 40;
 
-    /// <summary>
-    /// Random local install identifier used for offline install-bound licensing.
-    /// This is not based on hardware or FFXIV character data.
-    /// </summary>
-    public string InstallId { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Offline signed license token or JSON license contents.
-    /// </summary>
-    public string LicenseToken { get; set; } = string.Empty;
 
     /// <summary>
     /// Message template sent to the current target for their own tickets.
@@ -204,7 +195,7 @@ public sealed class Configuration : IPluginConfiguration
 
     /// <summary>
     /// Restores only the editable chat macro templates to the built-in defaults.
-    /// Raffle prices, ticket limits, license data, and ticket entries are left untouched.
+    /// Raffle prices, ticket limits, and ticket entries are left untouched.
     /// </summary>
     public void ResetDefaultMacros()
     {
@@ -218,6 +209,7 @@ public sealed class Configuration : IPluginConfiguration
         this.WinnerResultDelaySeconds = 3f;
     }
 
+    /// <summary>Saves the current configuration through Dalamud.</summary>
     public void Save()
     {
         this.pluginInterface?.SavePluginConfig(this);

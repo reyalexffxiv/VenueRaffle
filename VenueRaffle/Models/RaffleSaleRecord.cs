@@ -6,6 +6,9 @@ namespace VenueRaffle.Models;
 /// One raffle ticket purchase entry.
 /// </summary>
 [Serializable]
+/// <summary>
+/// One visible raffle entry row. Ranges are rebuilt after deletes so tickets remain contiguous.
+/// </summary>
 public sealed class RaffleSaleRecord
 {
     public string PlayerName { get; set; } = string.Empty;

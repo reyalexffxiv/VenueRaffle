@@ -4,7 +4,7 @@ using VenueRaffle.Models;
 namespace VenueRaffle.Services;
 
 /// <summary>
-/// Persistent raffle state saved outside the normal plugin settings file.
+/// JSON payload saved to disk so a raffle survives plugin reloads and game restarts.
 /// </summary>
 public sealed class RafflePersistentState
 {

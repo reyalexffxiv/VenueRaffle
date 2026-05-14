@@ -13,9 +13,7 @@ namespace VenueRaffle.Windows;
 public sealed class ConfigWindow : Window, IDisposable
 {
     private readonly Plugin plugin;
-    private string licensePasteText = string.Empty;
     private bool showMacroVariables;
-    private bool showManualLicensePaste;
 
     public ConfigWindow(Plugin plugin)
         : base("Venue Raffle Settings###VenueRaffleConfig")
@@ -32,6 +30,7 @@ public sealed class ConfigWindow : Window, IDisposable
     {
     }
 
+    /// <summary>Renders the window each frame while it is visible.</summary>
     public override void Draw()
     {
         if (!ImGui.BeginTabBar("VenueRaffleSettingsTabs"))
@@ -48,158 +47,7 @@ public sealed class ConfigWindow : Window, IDisposable
             this.DrawMacrosTab();
             ImGui.EndTabItem();
         }
-
-        if (ImGui.BeginTabItem("License"))
-        {
-            this.DrawLicenseTab();
-            ImGui.EndTabItem();
-        }
-
         ImGui.EndTabBar();
-    }
-
-    /// <summary>
-    /// Draws the offline activation flow. Users paste signed license text rather than importing files.
-    /// </summary>
-    private void DrawLicenseTab()
-    {
-        var config = this.plugin.Configuration;
-        var status = this.plugin.LicenseService.CurrentStatus;
-
-        ImGui.TextUnformatted("License Activation");
-        ImGui.Separator();
-        ImGui.TextWrapped("No online check is used. This tab does not send your character name, raffle data, chat messages, or target information anywhere.");
-        ImGui.TextWrapped("It only uses a random local Install ID generated on this computer.");
-
-        ImGui.Spacing();
-        ImGui.TextUnformatted("Your Install ID");
-        ImGui.SetNextItemWidth(360);
-        var installId = config.InstallId;
-        ImGui.InputText("##InstallIdReadOnly", ref installId, 128, ImGuiInputTextFlags.ReadOnly);
-        ImGui.SameLine();
-        if (ImGui.Button("Copy Install ID", new Vector2(140, 0)))
-            ImGui.SetClipboardText(config.InstallId);
-
-        ImGui.TextDisabled("Send this Install ID to the plugin developer to receive license text for this install.");
-
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.TextUnformatted("License Status");
-        ImGui.TextWrapped(status.IsValid ? "Status: Active" : "Status: Not Licensed");
-
-        if (status.Payload is not null)
-        {
-            ImGui.TextWrapped($"Licensed To: {status.Payload.LicensedTo}");
-            ImGui.TextWrapped($"Issued: {FormatLicenseTimestamp(status.Payload.IssuedAtUtc)}");
-            ImGui.TextWrapped($"Expires: {(string.IsNullOrWhiteSpace(status.Payload.ExpiresAtUtc) ? "Never" : FormatLicenseTimestamp(status.Payload.ExpiresAtUtc))}");
-        }
-        else if (!string.IsNullOrWhiteSpace(status.Message))
-        {
-            ImGui.TextDisabled(status.Message);
-        }
-
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.TextUnformatted("Activate License");
-        ImGui.TextDisabled("Paste the license text from the plugin developer, then click Activate.");
-
-        if (ImGui.Button(this.showManualLicensePaste ? "Hide License Text Box" : "Show License Text Box", new Vector2(170, 0)))
-            this.showManualLicensePaste = !this.showManualLicensePaste;
-
-        if (this.showManualLicensePaste)
-        {
-            ImGui.Spacing();
-            ImGui.SetNextItemWidth(-1);
-            ImGui.InputTextMultiline("##LicensePasteText", ref this.licensePasteText, 8192, new Vector2(-1, 120));
-
-            if (this.DrawSuccessButton("Activate", new Vector2(120, 0)))
-            {
-                var importStatus = this.plugin.LicenseService.ImportLicenseText(this.licensePasteText);
-                if (!importStatus.IsValid)
-                    this.licensePasteText = importStatus.Message;
-                else
-                {
-                    this.licensePasteText = string.Empty;
-                    this.showManualLicensePaste = false;
-                }
-            }
-        }
-
-        if (status.IsValid)
-        {
-            ImGui.Spacing();
-            ImGui.Separator();
-
-            if (this.DrawDangerButton("Clear License", new Vector2(120, 0)))
-                ImGui.OpenPopup("Clear License?##VenueRaffleClearLicense");
-        }
-
-        this.CenterNextPopupInSettingsWindow();
-        var popupOpen = true;
-        if (ImGui.BeginPopupModal("Clear License?##VenueRaffleClearLicense", ref popupOpen, ImGuiWindowFlags.AlwaysAutoResize))
-        {
-            ImGui.TextWrapped("This removes the saved license from this install. You can activate it again later if you still have the license text.");
-            ImGui.Spacing();
-
-            if (ImGui.Button("Yes, Clear License", new Vector2(150, 0)))
-            {
-                this.plugin.LicenseService.ClearLicense();
-                ImGui.CloseCurrentPopup();
-            }
-
-            ImGui.SameLine();
-            if (ImGui.Button("Cancel", new Vector2(100, 0)))
-                ImGui.CloseCurrentPopup();
-
-            ImGui.EndPopup();
-        }
-    }
-
-
-
-    private bool DrawSuccessButton(string label, Vector2 size)
-    {
-        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.12f, 0.42f, 0.22f, 1f));
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(0.16f, 0.55f, 0.30f, 1f));
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.09f, 0.32f, 0.17f, 1f));
-        var clicked = ImGui.Button(label, size);
-        ImGui.PopStyleColor(3);
-        return clicked;
-    }
-
-    private bool DrawDangerButton(string label, Vector2 size)
-    {
-        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.42f, 0.12f, 0.12f, 1f));
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(0.55f, 0.16f, 0.16f, 1f));
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.32f, 0.09f, 0.09f, 1f));
-        var clicked = ImGui.Button(label, size);
-        ImGui.PopStyleColor(3);
-        return clicked;
-    }
-
-    private static string FormatLicenseTimestamp(string? timestamp)
-    {
-        if (string.IsNullOrWhiteSpace(timestamp))
-            return "Never";
-
-        return DateTimeOffset.TryParse(
-            timestamp,
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-            out var parsed)
-            ? parsed.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture)
-            : timestamp;
-    }
-
-    private void CenterNextPopupInSettingsWindow()
-    {
-        var windowPos = ImGui.GetWindowPos();
-        var windowSize = ImGui.GetWindowSize();
-        var center = new Vector2(
-            windowPos.X + (windowSize.X * 0.5f),
-            windowPos.Y + (windowSize.Y * 0.5f));
-
-        ImGui.SetNextWindowPos(center, ImGuiCond.Always, new Vector2(0.5f, 0.5f));
     }
 
     private void DrawRaffleConfig()

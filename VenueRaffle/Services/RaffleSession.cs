@@ -13,11 +13,13 @@ namespace VenueRaffle.Services;
 /// </summary>
 public sealed class RaffleSession
 {
+    /// <summary>FFXIV /random cannot roll above 999, so the whole raffle is capped here.</summary>
     public const int MaxTotalTickets = 999;
 
     private readonly Configuration configuration;
     private readonly RaffleStateStorage stateStorage;
 
+    /// <summary>Creates the raffle service from saved configuration and persistent state storage.</summary>
     public RaffleSession(Configuration configuration, RaffleStateStorage stateStorage)
     {
         this.configuration = configuration;
@@ -26,14 +28,17 @@ public sealed class RaffleSession
         this.LastNotice = configuration.ActiveSessionLastNotice ?? string.Empty;
     }
 
+    /// <summary>Whether the current raffle session is marked as active.</summary>
     public bool IsRunning { get; private set; }
 
     public string LastNotice { get; private set; } = string.Empty;
 
     public bool HasTargetPlayer => !string.IsNullOrWhiteSpace(this.configuration.TargetPlayerName);
 
+    /// <summary>Number of visible purchase rows in the raffle entries table.</summary>
     public int EntryCount => this.configuration.SalesLedger.Count;
 
+    /// <summary>Total tickets currently sold across all entries.</summary>
     public int TotalTickets => this.configuration.SalesLedger.Sum(sale => Math.Max(0, sale.Tickets));
 
     public long GrossTicketSalesTotalGil => this.configuration.SalesLedger.Sum(sale => Math.Max(0, sale.Gil));
@@ -47,12 +52,14 @@ public sealed class RaffleSession
     // Backwards-compatible name used by older UI/macro code. This is now the ticket-sales amount that contributes to the prize.
     public long TicketSalesTotalGil => this.PrizeTicketSalesGil;
 
+    /// <summary>Full prize pot after base pot, ticket sales, and host share are applied.</summary>
     public long TotalPot => this.configuration.BasePot + this.PrizeTicketSalesGil;
 
     public int RemainingTickets => Math.Max(0, MaxTotalTickets - this.TotalTickets);
 
     public RaffleSaleRecord? LastSale => this.configuration.SalesLedger.LastOrDefault();
 
+    /// <summary>Marks the raffle as running without changing entries.</summary>
     public void Start()
     {
         this.IsRunning = true;
@@ -60,6 +67,7 @@ public sealed class RaffleSession
         this.SaveActiveSessionState();
     }
 
+    /// <summary>Marks the raffle as stopped without changing entries.</summary>
     public void Stop()
     {
         this.IsRunning = false;
@@ -151,6 +159,7 @@ public sealed class RaffleSession
         return true;
     }
 
+    /// <summary>Removes the most recent sale entry, used by the Undo Last Sale button.</summary>
     public void RemoveLastSale()
     {
         if (this.configuration.SalesLedger.Count <= 0)
@@ -163,6 +172,7 @@ public sealed class RaffleSession
         this.RemoveSaleAt(this.configuration.SalesLedger.Count - 1);
     }
 
+    /// <summary>Removes one sale entry by table index and then rebuilds ticket ranges.</summary>
     public void RemoveSaleAt(int index)
     {
         if (index < 0 || index >= this.configuration.SalesLedger.Count)
@@ -180,6 +190,7 @@ public sealed class RaffleSession
         this.SaveActiveSessionState();
     }
 
+    /// <summary>Deletes every raffle entry after user confirmation.</summary>
     public void ClearSalesLedger()
     {
         this.configuration.SalesLedger.Clear();
@@ -187,6 +198,7 @@ public sealed class RaffleSession
         this.SaveActiveSessionState();
     }
 
+    /// <summary>Finds the entry that owns a specific ticket number.</summary>
     public RaffleSaleRecord? FindTicket(int ticketNumber)
     {
         if (ticketNumber <= 0)
@@ -196,6 +208,7 @@ public sealed class RaffleSession
             sale => ticketNumber >= sale.StartTicket && ticketNumber <= sale.EndTicket);
     }
 
+    /// <summary>Calculates a rounded gil share for venue/host cuts.</summary>
     private static long CalculatePercentShare(long grossGil, float percent)
     {
         if (grossGil <= 0 || percent <= 0f)

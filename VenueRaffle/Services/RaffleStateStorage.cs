@@ -26,6 +26,7 @@ public sealed class RaffleStateStorage
     private readonly IPluginLog log;
     private readonly string stateFilePath;
 
+    /// <summary>Builds the storage path under Dalamud's plugin configuration directory.</summary>
     public RaffleStateStorage(
         IDalamudPluginInterface pluginInterface,
         IReliableFileStorage reliableFileStorage,
@@ -37,6 +38,7 @@ public sealed class RaffleStateStorage
         this.stateFilePath = Path.Combine(pluginInterface.ConfigDirectory.FullName, StateFileName);
     }
 
+    /// <summary>Loads the latest saved raffle state into the provided configuration object.</summary>
     public void LoadInto(Configuration configuration)
     {
         if (!this.reliableFileStorage.Exists(this.stateFilePath))
@@ -78,6 +80,7 @@ public sealed class RaffleStateStorage
         }
     }
 
+    /// <summary>Persists the raffle state through Dalamud's reliable file storage API.</summary>
     public void Save(Configuration configuration)
     {
         try

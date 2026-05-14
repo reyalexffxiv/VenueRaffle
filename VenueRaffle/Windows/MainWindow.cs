@@ -11,7 +11,7 @@ using VenueRaffle.Models;
 namespace VenueRaffle.Windows;
 
 /// <summary>
-/// Main Venue Raffle ticket control panel.
+/// Main Venue Raffle ticket control panel. It keeps UI rendering separate from raffle math and persistence.
 /// </summary>
 public sealed class MainWindow : Window, IDisposable
 {
@@ -25,12 +25,14 @@ public sealed class MainWindow : Window, IDisposable
     private string lastExportFilePath = string.Empty;
     private string lastExportDirectory = string.Empty;
     private string namedTicketsPlayerName = string.Empty;
+    private bool showDrawWinnerCtrlWarning;
     private System.Numerics.Vector2 popupCenter;
     private bool hasPopupCenter;
 
     private const string ClearStatisticsPopupName = "Clear Raffle Entries?";
     private const string UndoLastSalePopupName = "Undo Last Sale?";
     private const string DeleteEntryWindowName = "Delete Raffle Entry?###VenueRaffleDeleteEntryConfirm";
+    private const string DrawWinnerWarningWindowName = "Draw Winner Requires Ctrl###VenueRaffleDrawWinnerCtrlWarning";
 
     public MainWindow(Plugin plugin)
         : base("Venue Raffle###VenueRaffleMain")
@@ -55,14 +57,9 @@ public sealed class MainWindow : Window, IDisposable
     {
     }
 
+    /// <summary>Renders the window each frame while it is visible.</summary>
     public override void Draw()
     {
-        if (!this.plugin.LicenseService.IsLicensed)
-        {
-            this.DrawLicenseRequired();
-            return;
-        }
-
         this.CapturePopupCenterFromMainWindow();
 
         if (!ImGui.BeginTabBar("VenueRaffleTabs"))
@@ -85,21 +82,6 @@ public sealed class MainWindow : Window, IDisposable
     }
 
 
-    private void DrawLicenseRequired()
-    {
-        ImGui.TextUnformatted("Venue Raffle");
-        ImGui.Separator();
-        ImGui.Spacing();
-        ImGui.TextWrapped("VenueRaffle is locked because no valid install-bound license is installed for this computer.");
-        ImGui.Spacing();
-        ImGui.TextUnformatted($"Install ID: {this.plugin.Configuration.InstallId}");
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Copy Install ID"))
-            ImGui.SetClipboardText(this.plugin.Configuration.InstallId);
-        ImGui.Spacing();
-        if (ImGui.Button("Open License Settings", new System.Numerics.Vector2(180, 0)))
-            this.plugin.ToggleConfigUi();
-    }
 
     private void DrawMainTab()
     {
@@ -421,7 +403,7 @@ public sealed class MainWindow : Window, IDisposable
 
     private void DrawQuickSetupRow(Configuration config)
     {
-        ImGui.TextUnformatted("Target");
+        ImGui.TextUnformatted("Name");
 
         var quickRowAvailable = ImGui.GetContentRegionAvail().X;
         var targetInputWidth = Math.Max(360.0f, quickRowAvailable - 240.0f);
@@ -523,6 +505,7 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.TextUnformatted("Other Recipient");
 
         var otherRecipientButtonWidth = 180.0f;
+        var otherRecipientClearWidth = 70.0f;
         var otherRecipientInputWidth = 420.0f;
         ImGui.SetNextItemWidth(otherRecipientInputWidth);
         ImGui.InputText("##NamedTicketsPlayer", ref this.namedTicketsPlayerName, 128);
@@ -531,6 +514,11 @@ public sealed class MainWindow : Window, IDisposable
 
         if (ImGui.Button("Tell Other Name Tickets", new System.Numerics.Vector2(otherRecipientButtonWidth, 0)))
             this.plugin.TellLastBuyerTicketsForNamedPerson(this.namedTicketsPlayerName);
+
+        ImGui.SameLine();
+
+        if (this.DrawActionButton("Clear##OtherRecipient", new System.Numerics.Vector2(otherRecipientClearWidth, 0), ButtonTone.Neutral))
+            this.namedTicketsPlayerName = string.Empty;
 
         ImGui.TextDisabled("Name shown in the ticket message, for partner/friend purchases.");
 
@@ -544,10 +532,50 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.TextUnformatted("Winner");
-        ImGui.TextDisabled("Draws with /random using the current ticket total. Max tickets: 999.");
+        ImGui.TextDisabled("Ctrl + click to draw with /random using the current ticket total. Max tickets: 999.");
 
         if (this.DrawActionButton("Draw Winner", new System.Numerics.Vector2(180, 0), ButtonTone.Primary))
-            this.plugin.QueueWinnerDraw();
+        {
+            if (ImGui.GetIO().KeyCtrl)
+            {
+                this.plugin.QueueWinnerDraw();
+            }
+            else
+            {
+                this.showDrawWinnerCtrlWarning = true;
+            }
+        }
+
+        this.DrawFloatingDrawWinnerWarning();
+    }
+
+    private void DrawFloatingDrawWinnerWarning()
+    {
+        if (!this.showDrawWinnerCtrlWarning)
+            return;
+
+        var isOpen = true;
+
+        this.CenterNextPopupInMainWindow();
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(360, 0), ImGuiCond.Always);
+
+        if (!ImGui.Begin(DrawWinnerWarningWindowName, ref isOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoCollapse))
+        {
+            ImGui.End();
+            return;
+        }
+
+        ImGui.TextWrapped("Hold Ctrl while clicking Draw Winner.");
+        ImGui.TextDisabled("This prevents accidental /random draws.");
+        ImGui.Spacing();
+
+        if (ImGui.Button("OK", new System.Numerics.Vector2(120, 0)))
+            this.showDrawWinnerCtrlWarning = false;
+
+        ImGui.End();
+
+        if (!isOpen)
+            this.showDrawWinnerCtrlWarning = false;
     }
 
     private enum ButtonTone
