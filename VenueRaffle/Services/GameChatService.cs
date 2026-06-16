@@ -225,7 +225,6 @@ public sealed class GameChatService
 
         this.pendingCommands.Enqueue(new QueuedChatCommand(cleanCommand, delayAfterCommand));
         this.LastStatus = $"Queued command: {cleanCommand}";
-        this.log.Information("Queued native chatbox command: {Command}", cleanCommand);
     }
 
     /// <summary>
@@ -307,13 +306,12 @@ public sealed class GameChatService
 
             shellModule->ExecuteCommandInner(&commandString, uiModule);
 
-            this.log.Information("Executed native chatbox command: {Command}", command);
             return true;
         }
         catch (Exception ex)
         {
             this.LastStatus = $"Failed: {ex.GetType().Name}: {ex.Message}";
-            this.log.Error(ex, "Failed to execute native chatbox command: {Command}", command);
+            this.log.Error(ex, "Failed to execute native chatbox command.");
             return false;
         }
     }

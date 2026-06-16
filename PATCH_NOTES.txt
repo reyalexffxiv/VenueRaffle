@@ -1,4 +1,10 @@
 # Venue Raffle Patch Notes
 
+## 0.1.1.2
+- Maintenance review before publishing.
+- Removed license leftovers and kept Venue Raffle free/open.
+- Cleaned release notes and repository packaging hygiene.
+- Reduced plugin logging of chat command contents.
+
 ## 0.1.1.0
 - Beta release. Stuff might still happen so I appreciate the feedback

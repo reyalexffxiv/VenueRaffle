@@ -17,7 +17,7 @@ namespace VenueRaffle;
 /// Dalamud plugin entry point.
 ///
 /// This class wires together UI windows, chat command handling, raffle business logic,
-/// local reliable storage, and chat command handling. Keep heavy logic in services
+/// local reliable storage, and command routing. Keep heavy logic in services
 /// so the plugin entry point remains easy to scan.
 /// </summary>
 public sealed class Plugin : IDalamudPlugin
@@ -51,7 +51,6 @@ public sealed class Plugin : IDalamudPlugin
 
     /// <summary>Queues safe, rate-limited FFXIV chat commands.</summary>
     public GameChatService GameChatService { get; }
-
 
     public readonly WindowSystem WindowSystem = new("VenueRaffle");
 
@@ -269,7 +268,6 @@ public sealed class Plugin : IDalamudPlugin
     /// </summary>
     public void TellTicketSaleToCurrentTarget(Models.RaffleSaleRecord sale)
     {
-
         this.TellTicketSale(sale);
     }
 
