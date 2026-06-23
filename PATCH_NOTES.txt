@@ -1,5 +1,11 @@
 # Venue Raffle Patch Notes
 
+## 0.1.1.3
+- Patch-day maintenance release for the current FFXIV/Dalamud API 15 cycle.
+- Bumped package metadata for a clean rebuild.
+- Added a guarded release packaging script that stops on build failures and validates the produced zip before publishing.
+- Removed stale local build/package artifacts from the source handoff zip.
+
 ## 0.1.1.2
 - Maintenance review before publishing.
 - Removed license leftovers and kept Venue Raffle free/open.

@@ -2,6 +2,8 @@
 
 A lightweight raffle ticket tracker for FFXIV venues and events.
 
+Current version: `0.1.1.3`
+
 ## Features
 
 - Track raffle ticket purchases and ticket ranges
@@ -18,6 +20,16 @@ A lightweight raffle ticket tracker for FFXIV venues and events.
 /venueraffle
 /raffle
 ```
+
+## Release
+
+Build and package from the official repo folder with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Build-DalamudPackage.ps1
+```
+
+The script validates the project version, repository manifest version, produced package contents, and staged package manifest before writing `dist\VenueRaffle-latest.zip`.
 
 ## Notes
 
